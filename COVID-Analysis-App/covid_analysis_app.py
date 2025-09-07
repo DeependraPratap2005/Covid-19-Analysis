@@ -16,8 +16,8 @@ st.title("COVID-19 Data Analysis and Prediction")
 st.markdown("Analyze COVID-19 cases globally with visualizations and predictive modeling.")
 
 # Add a banner or introductory image
-if os.path.exists("/COVID-Analysis-App/COVID-DATA2.jpeg"):
-    st.image("/COVID-Analysis-App/COVID-DATA2.jpeg", use_column_width=True, caption="Global COVID-19 Insights")
+if os.path.exists("COVID-DATA2.JEPG"):
+    st.image("COVID-DATA2.JPEG", use_column_width=True, caption="Global COVID-19 Insights")
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -207,6 +207,7 @@ elif selected_section == "Prediction Model":
 # Footer
 st.sidebar.write("---")
 st.sidebar.info("Developed by Deependra Pratap Singh")
+
 
 
 
