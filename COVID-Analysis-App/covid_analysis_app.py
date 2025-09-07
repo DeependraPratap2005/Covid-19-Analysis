@@ -3,37 +3,117 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import os
 
-# Global settings for Seaborn
+# Seaborn theme
 sns.set_theme(style="darkgrid")
 
-# Title of the App
-st.title("COVID-19 Data Analysis and Prediction")
-st.markdown("Analyze COVID-19 cases globally with visualizations and predictive modeling.")
+# Custom CSS for UI
+st.markdown(
+    """
+    <style>
+    /* Main App Background */
+    .stApp {
+        background: linear-gradient(135deg, #141E30, #243B55);
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-# Add a banner or introductory image
-if os.path.exists("COVID-DATA2.JEPG"):
-    st.image("COVID-DATA2.JPEG", use_column_width=True, caption="Global COVID-19 Insights")
+    /* Sidebar Styling - Glassmorphism */
+    section[data-testid="stSidebar"] {
+        background: rgba(15, 25, 35, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 15px;
+        padding: 10px;
+    }
 
-# Sidebar for navigation
-st.sidebar.title("Navigation")
+    /* Sidebar radio buttons */
+    div[data-baseweb="radio"] label {
+        color: #f5f5f5 !important;
+        font-weight: 500;
+        border-radius: 10px;
+        padding: 8px 15px;
+        transition: 0.3s;
+    }
+    div[data-baseweb="radio"] label:hover {
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        color: white !important;
+        cursor: pointer;
+        box-shadow: 0px 0px 10px rgba(0, 183, 255, 0.7);
+    }
+
+    /* Titles */
+    h1, h2, h3, h4 {
+        color: #ffffff;
+        text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Metric Cards */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        color: white;
+        backdrop-filter: blur(10px);
+        margin: 10px;
+        transition: 0.3s;
+    }
+    .metric-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+    .metric-value {
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .metric-label {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    /* Developer Credit */
+    .dev-credit {
+        font-size: 18px;
+        font-weight: bold;
+        color: #8B4513; /* Brown color */
+        text-align: center;
+        text-shadow: 2px 2px 5px #000000, 3px 3px 8px #5C3317;
+        margin-top: 15px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Title
+st.title("🦠 COVID-19 Data Analysis and Prediction")
+st.markdown("Analyze COVID-19 data globally with **interactive visualizations** and **predictive modeling**.")
+
+# Add an image/banner
+if os.path.exists("COVID-DATA2.JPEG"):
+    st.image("COVID-DATA2.JPEG", use_column_width=True, caption="🌍 Global COVID-19 Insights")
+
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
 sections = [
     "Upload Dataset",
     "Data Overview",
     "EDA",
     "Top Countries",
     "Visualization",
-    "Global Summary",
+    "🌎 Global Summary",
     "Prediction Model"
 ]
 selected_section = st.sidebar.radio("Go to Section", sections)
 
-# Drag-and-drop file uploader
-st.sidebar.subheader("Upload Dataset")
+# Upload dataset
+st.sidebar.subheader("📂 Upload Dataset")
 uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type="csv")
 
 # Load data
@@ -41,133 +121,81 @@ uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type="csv")
 def load_data(file):
     return pd.read_csv(file)
 
-# Fallback sample dataset (small dummy data)
-def load_sample_data():
-    data = {
-        "Country/Region": ["India", "USA", "Brazil", "Russia", "UK"],
-        "Confirmed": [4500000, 5000000, 3000000, 1200000, 1000000],
-        "Deaths": [75000, 160000, 120000, 20000, 30000],
-        "Recovered": [4200000, 4800000, 2800000, 1100000, 950000],
-        "Date": pd.date_range(start="2020-01-01", periods=5, freq="M")
-    }
-    return pd.DataFrame(data)
-
+data = None
 if uploaded_file:
-    data = load_data(uploaded_file)
-else:
-    st.warning("No dataset uploaded. Using sample dataset.")
-    data = load_sample_data()
+    try:
+        data = load_data(uploaded_file)
+    except Exception:
+        st.error("❌ Invalid dataset format. Please upload a valid COVID-19 dataset.")
+
+# Warning & Data Check
+if not uploaded_file and selected_section != "Upload Dataset":
+    st.warning("⚠ Please upload a valid COVID-19 dataset. Without data, next sections will not execute.")
+    st.stop()
 
 # Section 1: Data Overview
-if selected_section == "Data Overview":
-    st.header("Data Overview")
-    st.subheader("First 5 Rows of the Dataset")
+if selected_section == "Data Overview" and data is not None:
+    st.header("📊 Data Overview")
     st.write(data.head())
-
     st.subheader("Missing Values")
     st.write(data.isnull().sum())
-
     st.subheader("Data Types")
     st.write(data.dtypes)
 
-# Section 2: Exploratory Data Analysis (EDA)
-elif selected_section == "EDA":
-    st.header("Exploratory Data Analysis")
-    st.subheader("Descriptive Statistics")
+# Section 2: EDA
+elif selected_section == "EDA" and data is not None:
+    st.header("🔎 Exploratory Data Analysis")
     st.write(data.describe())
 
-    total_confirmed = data['Confirmed'].sum()
-    total_deaths = data['Deaths'].sum()
-    total_recovered = data['Recovered'].sum()
-
-    st.subheader("Global Totals")
-    st.write(f"**Confirmed Cases:** {total_confirmed}")
-    st.write(f"**Deaths:** {total_deaths}")
-    st.write(f"**Recovered Cases:** {total_recovered}")
-
-# Section 3: Top Countries by Cases
-elif selected_section == "Top Countries":
-    st.header("Top Countries by Cases")
+# Section 3: Top Countries
+elif selected_section == "Top Countries" and data is not None:
+    st.header("🏆 Top Countries by Cases")
     top_confirmed = data[['Country/Region', 'Confirmed']].sort_values(by='Confirmed', ascending=False).head(5)
     top_deaths = data[['Country/Region', 'Deaths']].sort_values(by='Deaths', ascending=False).head(5)
-
     st.subheader("Top 5 Countries by Confirmed Cases")
-    st.write(top_confirmed)
-
+    st.dataframe(top_confirmed)
     st.subheader("Top 5 Countries by Deaths")
-    st.write(top_deaths)
+    st.dataframe(top_deaths)
 
 # Section 4: Visualization
-elif selected_section == "Visualization":
-    st.header("Visualizations")
+elif selected_section == "Visualization" and data is not None:
+    st.header("📈 Visualizations")
+    graph_type = st.selectbox("Choose a graph type", [
+        "Bar Chart: Top 5 Countries by Confirmed Cases",
+        "Pie Chart: Top 5 Countries by Deaths",
+        "Scatter Plot: Confirmed Cases vs Deaths",
+        "Line Chart: Time Series Analysis"
+    ])
 
-    # Dropdown menu to select visualization type
-    graph_type = st.selectbox(
-        "Choose a graph type",
-        [
-            "Bar Chart: Top 5 Countries by Confirmed Cases",
-            "Pie Chart: Top 5 Countries by Deaths",
-            "Scatter Plot: Confirmed Cases vs Deaths",
-            "Line Chart: Time Series Analysis (if available)"
-        ]
-    )
-
-    # Visualization 1: Bar Chart for Top 5 Countries by Confirmed Cases
     if graph_type == "Bar Chart: Top 5 Countries by Confirmed Cases":
-        st.subheader("Top 5 Countries by Confirmed Cases (Bar Chart)")
         top_confirmed = data[['Country/Region', 'Confirmed']].sort_values(by='Confirmed', ascending=False).head(5)
+        fig = px.bar(top_confirmed, x="Confirmed", y="Country/Region", orientation="h",
+                     color="Confirmed", text="Confirmed", color_continuous_scale="Viridis")
+        st.plotly_chart(fig, use_container_width=True)
 
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.barplot(x='Confirmed', y='Country/Region', data=top_confirmed, palette='viridis', ax=ax)
-        ax.set_title("Top 5 Countries by Confirmed Cases")
-        st.pyplot(fig)
-
-    # Visualization 2: Pie Chart for Top 5 Countries by Deaths
     elif graph_type == "Pie Chart: Top 5 Countries by Deaths":
-        st.subheader("Top 5 Countries by Deaths (Pie Chart)")
         top_deaths = data[['Country/Region', 'Deaths']].sort_values(by='Deaths', ascending=False).head(5)
+        fig = px.pie(top_deaths, names="Country/Region", values="Deaths", hole=0.3,
+                     color_discrete_sequence=px.colors.sequential.RdBu)
+        st.plotly_chart(fig, use_container_width=True)
 
-        fig, ax = plt.subplots(figsize=(6, 6))
-        ax.pie(top_deaths['Deaths'], labels=top_deaths['Country/Region'],
-               autopct='%1.1f%%', startangle=90,
-               colors=sns.color_palette("pastel"))
-        ax.set_title("Top 5 Countries by Deaths")
-        st.pyplot(fig)
-
-    # Visualization 3: Scatter Plot for Confirmed Cases vs Deaths
     elif graph_type == "Scatter Plot: Confirmed Cases vs Deaths":
-        st.subheader("Scatter Plot: Confirmed Cases vs Deaths")
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.scatter(data['Confirmed'], data['Deaths'], color='purple', alpha=0.7)
-        ax.set_title("Confirmed Cases vs Deaths")
-        ax.set_xlabel("Confirmed Cases")
-        ax.set_ylabel("Deaths")
-        st.pyplot(fig)
+        fig = px.scatter(data, x="Confirmed", y="Deaths", size="Confirmed",
+                         color="Country/Region", hover_name="Country/Region")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Visualization 4: Line Chart for Time Series Analysis (if available)
-    elif graph_type == "Line Chart: Time Series Analysis (if available)":
-        st.subheader("Time Series Analysis")
-
+    elif graph_type == "Line Chart: Time Series Analysis":
         if 'Date' in data.columns:
-            # Convert the Date column to datetime if not already done
-            data['Date'] = pd.to_datetime(data['Date'])
             time_series_data = data.groupby('Date').sum().reset_index()
-
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.plot(time_series_data['Date'], time_series_data['Confirmed'], label='Confirmed Cases', color='blue')
-            ax.plot(time_series_data['Date'], time_series_data['Deaths'], label='Deaths', color='red')
-            ax.plot(time_series_data['Date'], time_series_data['Recovered'], label='Recovered Cases', color='green')
-            ax.set_title("Time Series Analysis of COVID-19 Cases")
-            ax.set_xlabel("Date")
-            ax.set_ylabel("Number of Cases")
-            ax.legend()
-            st.pyplot(fig)
+            fig = px.line(time_series_data, x="Date", y=["Confirmed", "Deaths", "Recovered"])
+            st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning("The dataset does not contain a 'Date' column for time series analysis.")
+            st.warning("⚠ Dataset does not contain 'Date' column.")
 
 # Section 5: Global Summary
-elif selected_section == "Global Summary":
-    st.header("Global COVID-19 Cases Summary")
+elif selected_section == "🌎 Global Summary" and data is not None:
+    st.header("🌎 Global COVID-19 Cases Summary")
+
     global_cases = {
         'Confirmed': data['Confirmed'].sum(),
         'Deaths': data['Deaths'].sum(),
@@ -175,40 +203,44 @@ elif selected_section == "Global Summary":
         'Active': (data['Confirmed'].sum() - data['Deaths'].sum() - data['Recovered'].sum())
     }
 
-    st.bar_chart(pd.DataFrame(global_cases, index=["Cases"]))
+    # Cards Layout
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
 
-# Section 6: Prediction Model
-elif selected_section == "Prediction Model":
-    st.header("Prediction Model for Future Cases")
+    col1.markdown(f"<div class='metric-card'><div class='metric-value'>🦠 {global_cases['Confirmed']:,}</div><div class='metric-label'>Confirmed</div></div>", unsafe_allow_html=True)
+    col2.markdown(f"<div class='metric-card'><div class='metric-value'>⚰️ {global_cases['Deaths']:,}</div><div class='metric-label'>Deaths</div></div>", unsafe_allow_html=True)
+    col3.markdown(f"<div class='metric-card'><div class='metric-value'>💊 {global_cases['Recovered']:,}</div><div class='metric-label'>Recovered</div></div>", unsafe_allow_html=True)
+    col4.markdown(f"<div class='metric-card'><div class='metric-value'>🔥 {global_cases['Active']:,}</div><div class='metric-label'>Active</div></div>", unsafe_allow_html=True)
+
+    # Visualization
+    summary_df = pd.DataFrame(list(global_cases.items()), columns=["Category", "Count"])
+    st.subheader("📊 Global Summary Visualization")
+    fig1 = px.bar(summary_df, x="Category", y="Count", color="Category", text_auto=True,
+                  color_discrete_sequence=px.colors.sequential.Viridis)
+    st.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.pie(summary_df, names="Category", values="Count", hole=0.3,
+                  color_discrete_sequence=px.colors.sequential.RdBu)
+    st.plotly_chart(fig2, use_container_width=True)
+
+# Section 6: Prediction
+elif selected_section == "Prediction Model" and data is not None:
+    st.header("🤖 Prediction Model for Future Cases")
     X = data[['Confirmed']].values
     y = data['Deaths'].values
-
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = LinearRegression()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
-
-    st.subheader("Model Evaluation")
+    st.subheader("📌 Model Evaluation")
     st.write(f"**Mean Squared Error:** {mse}")
     st.write(f"**R-Squared Value:** {r2}")
+    fig = px.scatter(x=X_test.flatten(), y=y_test, labels={'x': 'Confirmed Cases', 'y': 'Deaths'})
+    fig.add_scatter(x=X_test.flatten(), y=y_pred, mode="lines", name="Predicted")
+    st.plotly_chart(fig, use_container_width=True)
 
-    fig, ax = plt.subplots()
-    ax.scatter(X_test, y_test, color='blue', label='Actual')
-    ax.plot(X_test, y_pred, color='red', label='Predicted')
-    ax.set_title("Actual vs Predicted Deaths")
-    ax.set_xlabel("Confirmed Cases")
-    ax.set_ylabel("Deaths")
-    ax.legend()
-    st.pyplot(fig)
-
-# Footer
+# Footer with 3D Brown Effect
 st.sidebar.write("---")
-st.sidebar.info("Developed by Deependra Pratap Singh")
-
-
-
-
-
+st.sidebar.markdown("<div class='dev-credit'>👨‍💻 Developed by Deependra Pratap Singh</div>", unsafe_allow_html=True)
