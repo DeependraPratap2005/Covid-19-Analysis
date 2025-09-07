@@ -6,23 +6,30 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
+import os
 
-# Global settings for Seaborn and Matplotlib
+# Global settings for Seaborn
 sns.set_theme(style="darkgrid")
-plt.style.use('seaborn-darkgrid')
 
 # Title of the App
 st.title("COVID-19 Data Analysis and Prediction")
 st.markdown("Analyze COVID-19 cases globally with visualizations and predictive modeling.")
 
 # Add a banner or introductory image
-st.image("COVID-DATA2.JPEG", use_column_width=True, caption="Global COVID-19 Insights")
-
-
+if os.path.exists("COVID-DATA.jpg"):
+    st.image("COVID-DATA.jpg", use_column_width=True, caption="Global COVID-19 Insights")
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
-sections = ["Upload Dataset", "Data Overview", "EDA", "Top Countries", "Visualization", "Global Summary", "Prediction Model"]
+sections = [
+    "Upload Dataset",
+    "Data Overview",
+    "EDA",
+    "Top Countries",
+    "Visualization",
+    "Global Summary",
+    "Prediction Model"
+]
 selected_section = st.sidebar.radio("Go to Section", sections)
 
 # Drag-and-drop file uploader
@@ -34,11 +41,22 @@ uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type="csv")
 def load_data(file):
     return pd.read_csv(file)
 
+# Fallback sample dataset (small dummy data)
+def load_sample_data():
+    data = {
+        "Country/Region": ["India", "USA", "Brazil", "Russia", "UK"],
+        "Confirmed": [4500000, 5000000, 3000000, 1200000, 1000000],
+        "Deaths": [75000, 160000, 120000, 20000, 30000],
+        "Recovered": [4200000, 4800000, 2800000, 1100000, 950000],
+        "Date": pd.date_range(start="2020-01-01", periods=5, freq="M")
+    }
+    return pd.DataFrame(data)
+
 if uploaded_file:
     data = load_data(uploaded_file)
 else:
-    st.warning("Please upload a dataset to proceed.")
-    st.stop()
+    st.warning("No dataset uploaded. Using sample dataset.")
+    data = load_sample_data()
 
 # Section 1: Data Overview
 if selected_section == "Data Overview":
@@ -102,8 +120,6 @@ elif selected_section == "Visualization":
         fig, ax = plt.subplots(figsize=(8, 5))
         sns.barplot(x='Confirmed', y='Country/Region', data=top_confirmed, palette='viridis', ax=ax)
         ax.set_title("Top 5 Countries by Confirmed Cases")
-        ax.set_xlabel("Confirmed Cases")
-        ax.set_ylabel("Country/Region")
         st.pyplot(fig)
 
     # Visualization 2: Pie Chart for Top 5 Countries by Deaths
@@ -112,7 +128,9 @@ elif selected_section == "Visualization":
         top_deaths = data[['Country/Region', 'Deaths']].sort_values(by='Deaths', ascending=False).head(5)
 
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.pie(top_deaths['Deaths'], labels=top_deaths['Country/Region'], autopct='%1.1f%%', startangle=90, colors=sns.color_palette("pastel"))
+        ax.pie(top_deaths['Deaths'], labels=top_deaths['Country/Region'],
+               autopct='%1.1f%%', startangle=90,
+               colors=sns.color_palette("pastel"))
         ax.set_title("Top 5 Countries by Deaths")
         st.pyplot(fig)
 
@@ -129,7 +147,7 @@ elif selected_section == "Visualization":
     # Visualization 4: Line Chart for Time Series Analysis (if available)
     elif graph_type == "Line Chart: Time Series Analysis (if available)":
         st.subheader("Time Series Analysis")
-        
+
         if 'Date' in data.columns:
             # Convert the Date column to datetime if not already done
             data['Date'] = pd.to_datetime(data['Date'])
@@ -189,4 +207,3 @@ elif selected_section == "Prediction Model":
 # Footer
 st.sidebar.write("---")
 st.sidebar.info("Developed by Deependra Pratap Singh")
-
